@@ -1,46 +1,40 @@
-# ingest.py
-
 import os
 import glob
-from langchain_community.document_loaders import TextLoader
+from dotenv import load_dotenv
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# 🔹 Load .txt documents from /docs
-def load_documents(folder_path="./docs"):
-    filepaths = glob.glob(os.path.join(folder_path, "*.txt"))
-    documents = []
+# Load environment variables (especially GOOGLE_API_KEY)
+load_dotenv()
 
+# Load PDFs from ./docs folder
+def load_documents(folder_path="./docs"):
+    filepaths = glob.glob(os.path.join(folder_path, "*.pdf"))
+    documents = []
     for path in filepaths:
-        try:
-            loader = TextLoader(path)
-            documents.extend(loader.load())
-        except Exception as e:
-            print(f"⚠️ Error loading {path}: {e}")
-    
+        loader = PyPDFLoader(path)
+        documents.extend(loader.load())
     return documents
 
-# 🔹 Chunk documents into overlapping blocks
+# Split into chunks
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
-        chunk_overlap=150,
+        chunk_overlap=100
     )
     return splitter.split_documents(documents)
 
-# 🔹 Embed and save to FAISS vectorstore
+# Build and save FAISS index
 def build_faiss_index(chunks, persist_path="faiss_index"):
-    if not chunks:
-        print("❌ No chunks to index. Check your input files.")
-        return
-
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    if not chunks:
+        raise ValueError("No chunks found. Cannot build index.")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(persist_path)
-    print(f"✅ FAISS index saved to: {persist_path}")
+    print(f"✅ FAISS index saved at: {persist_path}")
 
-# 🔹 Run everything
 if __name__ == "__main__":
     print("🔍 Loading documents...")
     docs = load_documents()
@@ -52,5 +46,4 @@ if __name__ == "__main__":
 
     print("📦 Building FAISS vectorstore...")
     build_faiss_index(chunks)
-
     print("🚀 Done.")
