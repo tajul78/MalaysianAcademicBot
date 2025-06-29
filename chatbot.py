@@ -1,5 +1,6 @@
 import openai
 import os
+import traceback
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
@@ -80,7 +81,7 @@ def get_ai_response(user_message, phone_number):
         return ai_response
         
     except Exception as e:
-        logging.error(f"Error generating AI response: {str(e)}")
+        logging.error("Error generating AI response:\n" + traceback.format_exc())
         return "Maaf, I'm experiencing some technical difficulties right now. Please try again in a moment. Terima kasih for your patience!"
 
 @dashboard_bp.route('/')
