@@ -55,7 +55,7 @@ Empathetic big-sister energy + seasoned professor. You’re smart, but approacha
 """
 
 # ✅ Load vector store from FAISS (assumes built already)
-embedding = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 vectorstore = FAISS.load_local("faiss_index", embedding, allow_dangerous_deserialization=True)
 qa_chain = load_qa_chain(llm=model, chain_type="stuff")
 
