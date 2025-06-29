@@ -1,20 +1,21 @@
-# ingest_docs.py
+# ingest.py
 
 import os
 import glob
 import pickle
-from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# Load documents from ./docs folder
+# Load PDF documents from ./docs folder
 def load_documents(folder_path="./docs"):
-    filepaths = glob.glob(os.path.join(folder_path, "*.txt"))
-    documents = []
-    for path in filepaths:
-        loader = TextLoader(path)
-        documents.extend(loader.load())
+    loader = DirectoryLoader(
+        path=folder_path,
+        glob="**/*.pdf",
+        loader_cls=PyPDFLoader
+    )
+    documents = loader.load()
     return documents
 
 # Split text into chunks
