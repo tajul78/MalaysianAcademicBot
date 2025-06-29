@@ -1,9 +1,10 @@
 import os
+import google.generativeai as genai
 import traceback
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
-from openai import OpenAI
+
 
 # Initialize OpenAI client
 dashboard_bp = Blueprint('dashboard', __name__)
