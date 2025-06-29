@@ -4,6 +4,8 @@ import logging
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
