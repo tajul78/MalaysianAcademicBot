@@ -2,23 +2,21 @@
 
 import os
 import glob
-import pickle
 from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# Load PDF documents from ./docs folder
+# Step 1: Load all PDF files from ./docs folder
 def load_documents(folder_path="./docs"):
-    loader = UnstructuredPDFLoader(
-        path=folder_path,
-        glob="**/*.pdf",
-        loader_cls=PyPDFLoader
-    )
-    documents = loader.load()
+    filepaths = glob.glob(os.path.join(folder_path, "*.pdf"))
+    documents = []
+    for path in filepaths:
+        loader = UnstructuredPDFLoader(path)
+        documents.extend(loader.load())
     return documents
 
-# Split text into chunks
+# Step 2: Split documents into chunks
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
@@ -26,13 +24,17 @@ def split_documents(documents):
     )
     return splitter.split_documents(documents)
 
-# Embed and store in FAISS
+# Step 3: Embed chunks and store using FAISS
 def build_faiss_index(chunks, persist_path="faiss_index"):
+    if not chunks:
+        print("⚠️ No chunks to index. Please check your PDF content.")
+        return
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(persist_path)
     print(f"✅ Index saved to {persist_path}")
 
+# Entry point
 if __name__ == "__main__":
     print("🔍 Loading documents...")
     docs = load_documents()
