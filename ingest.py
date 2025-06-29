@@ -27,7 +27,7 @@ def split_documents(documents):
 
 # Embed and store in FAISS
 def build_faiss_index(chunks, persist_path="faiss_index"):
-    embeddings = HuggingFaceEmbeddings()  # No API key needed
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")  # No API key needed
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(persist_path)
     print(f"✅ Index saved to {persist_path}")
