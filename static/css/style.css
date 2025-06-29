@@ -96,3 +96,27 @@ code {
     border-radius: 0.25rem;
     font-size: 0.85em;
 }
+body {
+    color: #f1f1f1; /* Light gray text */
+    background-color: #121212; /* Dark background */
+}
+
+.card, .card-body, .card-title, .card-text {
+    color: #e0e0e0 !important; /* Override any Bootstrap variable issues */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+.text-muted {
+    color: #bbbbbb !important;
+}
+
+a {
+    color: #58a6ff; /* Optional: Bootstrap link blue */
+}
+
+a:hover {
+    color: #8ab4f8;
+}
