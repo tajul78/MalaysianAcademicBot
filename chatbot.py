@@ -49,8 +49,7 @@ conversation_history = {}
 def get_ai_response(user_message, phone_number):
     try:
         conversation_history[phone_number].append({"role": "user", "content": user_message})
-        prompt = [msg["content"] for msg in conversation_history[phone_number]]
-
+        prompt = "\n".join([msg["content"] for msg in conversation_history[phone_number]])
         response = model.generate_content(prompt)
         return response.text.strip()
     
