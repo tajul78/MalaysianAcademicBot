@@ -1,4 +1,5 @@
 import os
+import google.generativeai as genai
 import logging
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -6,6 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 # Create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
