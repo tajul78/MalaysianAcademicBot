@@ -28,6 +28,12 @@ def split_documents(documents):
         chunk_overlap=150,
     )
     return splitter.split_documents(documents)
+    
+chunks = split_documents(docs)
+print(f"🔢 {len(chunks)} chunks created.")
+if not chunks:
+    print("❌ No chunks generated. Possible empty .txt files or bad encoding.")
+    exit()
 
 # 🔹 Embed and save to FAISS vectorstore
 def build_faiss_index(chunks, persist_path="faiss_index"):
