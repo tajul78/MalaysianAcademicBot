@@ -1,59 +1,54 @@
-# ingest.py
-
 import os
 import glob
-from langchain_community.document_loaders import UnstructuredPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# Step 1: Load all PDF files from ./docs folder
 def load_documents(folder_path="./docs"):
     filepaths = glob.glob(os.path.join(folder_path, "*.pdf"))
+    print(f"📁 Found {len(filepaths)} PDF files.")
     documents = []
     for path in filepaths:
-        loader = UnstructuredPDFLoader(path)
-        documents.extend(loader.load())
+        print(f"📄 Loading: {path}")
+        loader = PyPDFLoader(path)
+        pages = loader.load()
+        if pages:
+            print(f"✅ Loaded {len(pages)} pages from {os.path.basename(path)}")
+        else:
+            print(f"⚠️ Warning: No text extracted from {os.path.basename(path)}")
+        documents.extend(pages)
     return documents
 
-# Debug print a sample document content
-if docs:
-    print("🔎 Sample document content preview:")
-    print(docs[0].page_content[:500])
-else:
-    print("❌ No documents loaded. Check file paths or format.")
-
-# Step 2: Split documents into chunks
 def split_documents(documents):
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=150,
-    )
-    return splitter.split_documents(documents)
-if not chunks:
-    print("❌ No chunks created. Possible empty or non-extractable PDF.")
-    exit(1)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=150)
+    chunks = splitter.split_documents(documents)
+    print(f"🔢 Total chunks created: {len(chunks)}")
+    if chunks:
+        print("📌 Sample chunk preview:\n", chunks[0].page_content[:300])
+    return chunks
 
-# Step 3: Embed chunks and store using FAISS
 def build_faiss_index(chunks, persist_path="faiss_index"):
     if not chunks:
-        print("⚠️ No chunks to index. Please check your PDF content.")
+        print("❌ No chunks to embed. Aborting.")
         return
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(persist_path)
-    print(f"✅ Index saved to {persist_path}")
+    print(f"✅ Vectorstore saved at '{persist_path}'")
 
-# Entry point
 if __name__ == "__main__":
     print("🔍 Loading documents...")
     docs = load_documents()
-    print(f"📄 {len(docs)} documents loaded.")
+
+    if not docs:
+        print("❌ No documents loaded. Exiting.")
+        exit()
 
     print("✂️ Splitting into chunks...")
     chunks = split_documents(docs)
-    print(f"🔢 {len(chunks)} chunks created.")
 
     print("📦 Building FAISS vectorstore...")
     build_faiss_index(chunks)
+
     print("🚀 Done.")
