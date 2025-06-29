@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chatbot Dashboard</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fab fa-whatsapp me-2"></i>
+                Malaysian Entrepreneur Bot
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <span class="badge bg-success" id="status-badge">
+                        <i class="fas fa-circle"></i> Active
+                    </span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-6 mb-3">
+                    <i class="fas fa-robot me-2"></i>
+                    WhatsApp Chatbot Dashboard
+                </h1>
+                <p class="lead text-muted">
+                    Monitoring Dr. Siti Rahman - Your Malaysian Academic Entrepreneur Assistant
+                </p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-primary bg-opacity-10 border-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-comments fa-2x text-primary mb-2"></i>
+                        <h3 class="card-title" id="total-conversations">0</h3>
+                        <p class="card-text text-muted">Total Conversations</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-success bg-opacity-10 border-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                        <h3 class="card-title" id="total-messages">0</h3>
+                        <p class="card-text text-muted">Messages Processed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-info bg-opacity-10 border-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                        <h3 class="card-title" id="last-updated">Just now</h3>
+                        <p class="card-text text-muted">Last Updated</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bot Persona Information -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-graduate me-2"></i>
+                            Bot Persona: Dr. Siti Rahman
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Background</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-graduation-cap me-2 text-muted"></i>Professor at Universiti Malaya</li>
+                                    <li><i class="fas fa-rocket me-2 text-muted"></i>3 Successful Tech Startups</li>
+                                    <li><i class="fas fa-award me-2 text-muted"></i>PhD from University of Cambridge</li>
+                                    <li><i class="fas fa-chart-line me-2 text-muted"></i>MIER Research Experience</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Expertise</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-globe-asia me-2 text-muted"></i>Southeast Asian Markets</li>
+                                    <li><i class="fas fa-coins me-2 text-muted"></i>Islamic Finance</li>
+                                    <li><i class="fas fa-digital-tachograph me-2 text-muted"></i>Digital Transformation</li>
+                                    <li><i class="fas fa-handshake me-2 text-muted"></i>Malaysian Business Culture</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Conversations -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Recent Conversations
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshData()">
+                            <i class="fas fa-refresh me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="conversations-list">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                <p>Loading conversations...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>
+                            Configuration Status
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator bg-success me-3"></div>
+                                    <div>
+                                        <strong>OpenAI Integration</strong>
+                                        <p class="text-muted mb-0 small">GPT-4o model configured</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator bg-success me-3"></div>
+                                    <div>
+                                        <strong>Twilio WhatsApp</strong>
+                                        <p class="text-muted mb-0 small">Webhook endpoint active</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-dark bg-opacity-25 rounded">
+                            <small class="text-muted">
+                                <strong>Webhook URL:</strong> <code id="webhook-url">Loading...</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4 bg-dark">
+        <div class="container text-center">
+            <p class="text-muted mb-0">
+                <i class="fab fa-whatsapp me-1"></i>
+                Malaysian Academic Entrepreneur WhatsApp Bot • 
+                Powered by OpenAI GPT-4o & Twilio
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
