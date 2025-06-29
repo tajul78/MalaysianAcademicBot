@@ -1,130 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhatsApp Chatbot Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-        color: #f8f9fa;
-        background-color: #121212;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    h1, h2, h3, h4, .navbar-brand, .display-6, strong {
-        color: #ffffff;
-    }
-    .section-title, .card-title, .card-header, .text-primary {
-        color: #00bfff;
-    }
-    .card {
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background-color: #1e1e1e;
-        color: #f1f1f1;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        transition: box-shadow 0.3s ease;
-    }
-    .card:hover {
-        box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-    }
-    .conversation-item {
-        border-left: 3px solid #0dcaf0;
-        padding-left: 1rem;
-        margin-bottom: 1rem;
-    }
-    button, .btn {
-        color: #fff;
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-    button:hover, .btn:hover {
-        background-color: #0b5ed7;
-    }
-    .status-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-    }
-    .status-indicator.online { background-color: #28a745; }
-    .status-indicator.offline { background-color: #dc3545; }
-    .text-muted {
-        color: #cccccc !important;
-        opacity: 0.8;
-    }
-    .bg-opacity-10 {
-        background-color: rgba(13, 202, 240, 0.1) !important;
-    }
-    .bg-success.bg-opacity-10 {
-        background-color: rgba(40, 167, 69, 0.1) !important;
-    }
-    code {
-        background-color: #333;
-        color: #f8f8f2;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-size: 0.9em;
-    }
-    #status-badge { animation: pulse 2s infinite; }
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-    @media (max-width: 768px) {
-        .display-6 { font-size: 1.75rem; }
-        .card-body { padding: 1rem; }
-    }
-  </style>
-</head>
-<body>
-  <div class="container py-5">
-    <h1 class="mb-4">📊 WhatsApp Chatbot Dashboard</h1>
-    <div class="row text-center mb-4">
-      <div class="col-md-4">
-        <div class="card p-3">
-          <h5 class="section-title">Total Conversations</h5>
-          <p class="display-6">12</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card p-3">
-          <h5 class="section-title">Messages Processed</h5>
-          <p class="display-6">34</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card p-3">
-          <h5 class="section-title">Last Updated</h5>
-          <p class="display-6">2025-06-29 16:00</p>
-        </div>
-      </div>
-    </div>
+body {
+    background-color: #f4f4f4;
+    color: #222;
+}
 
-    <div class="card mb-4">
-      <div class="card-header">🤖 Bot Persona: Dr. Siti Rahman</div>
-      <div class="card-body">
-        <p><strong>Background:</strong> Professor at Universiti Malaya, Founder of 3 Tech Startups</p>
-        <p><strong>Expertise:</strong> Islamic Finance, Digital Transformation, SE Asia Markets</p>
-      </div>
-    </div>
+.card {
+    background-color: #ffffff;
+    color: #222;
+    border: 1px solid #ccc;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
 
-    <div class="card mb-4">
-      <div class="card-header">💬 Recent Conversations</div>
-      <div class="card-body">
-        <div class="conversation-item">601*****771 - 2 messages</div>
-        <div class="conversation-item">601*****572 - 1 message</div>
-      </div>
-    </div>
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
 
-    <div class="card">
-      <div class="card-header">⚙️ Configuration Status</div>
-      <div class="card-body">
-        <p><span class="status-indicator online"></span> <strong>Gemini Integration:</strong> Model ready</p>
-        <p><span class="status-indicator online"></span> <strong>Twilio WhatsApp:</strong> Webhook active</p>
-        <p class="text-muted">Webhook URL: <code>https://malaysianacademicbot.onrender.com/webhook/whatsapp</code></p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+.navbar-brand {
+    font-weight: 600;
+    color: #0056b3;
+}
+
+.display-6 {
+    font-weight: 300;
+    color: #333;
+}
+
+.section-title, .card-title, .card-header, .text-primary {
+    color: #007bff;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.online {
+    background-color: #28a745;
+}
+
+.status-indicator.offline {
+    background-color: #dc3545;
+}
+
+.text-muted {
+    color: #666;
+}
+
+.bg-opacity-10 {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+.bg-success.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+.bg-info.bg-opacity-10 {
+    background-color: rgba(23, 162, 184, 0.1) !important;
+}
+
+code {
+    background-color: #e9ecef;
+    color: #c7254e;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+}
+
+#status-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .display-6 {
+        font-size: 1.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+}
