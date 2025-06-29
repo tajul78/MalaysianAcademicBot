@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, jsonify
 from google.generativeai import configure, GenerativeModel
 
-genai.configure(api_key="GEMINI_API_KEY")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = GenerativeModel('gemini-pro')
 
 
