@@ -4,6 +4,9 @@ import traceback
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
+from google.generativeai import GenerativeModel
+
+model = GenerativeModel('gemini-pro')
 
 
 # Initialize OpenAI client
@@ -44,29 +47,12 @@ conversation_history = {}
 
 def get_ai_response(user_message, phone_number):
     try:
-        # Initialize conversation history if needed
-        if phone_number not in conversation_history:
-            conversation_history[phone_number] = []
+        conversation_history[phone_number].append({"role": "user", "content": user_message})
+        prompt = [msg["content"] for msg in conversation_history[phone_number]]
 
-        # Append user message
-        conversation_history[phone_number].append({"role": "user", "parts": [user_message]})
-
-        # Trim history to last 10
-        if len(conversation_history[phone_number]) > 10:
-            conversation_history[phone_number] = conversation_history[phone_number][-10:]
-
-        # Create Gemini model and chat session
-        model = genai.GenerativeModel("gemini-pro")
-        chat = model.start_chat(history=conversation_history[phone_number])
-
-        # Send user message
-        gemini_response = chat.send_message(user_message)
-
-        # Append bot reply to history
-        conversation_history[phone_number].append({"role": "model", "parts": [gemini_response.text]})
-
-        return gemini_response.text
-
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    
     except Exception as e:
         logging.error(f"Error generating Gemini AI response: {str(e)}")
         return "Maaf, sistem AI sedang menghadapi masalah teknikal. Sila cuba sebentar lagi."
