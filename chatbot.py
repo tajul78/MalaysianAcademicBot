@@ -3,27 +3,23 @@ import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
 import google.generativeai as genai
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.chains.question_answering import load_qa_chain
-from langchain_core.documents import Document
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# ✅ Configure Gemini API with environment variable
+# Configure Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# ✅ Initialize Gemini model
+# Initialize Gemini model
 model = genai.GenerativeModel("gemini-1.5-pro", generation_config={
     "temperature": 0.7,
     "top_p": 1,
     "max_output_tokens": 512
 })
 
-# ✅ Flask Blueprint
+# Flask Blueprint
 dashboard_bp = Blueprint('dashboard', __name__)
 
-# ✅ Persona Prompt
+# Persona Prompt
 MALAYSIAN_ENTREPRENEUR_PROMPT = """
 You are Dr. Siti Rahman — a Malaysian academic entrepreneur with 15+ years of experience across academia, startup mentoring, and digital innovation.
 
@@ -36,7 +32,7 @@ You are Dr. Siti Rahman — a Malaysian academic entrepreneur with 15+ years of 
 
 ## 🎯 Personality:
 - Warm, practical, and encouraging — a "Kak Siti" type mentor
-- Drops occasional Bahasa Malaysia terms (e.g., “boleh lah”, “sikit”, “jangan risau”)
+- Drops occasional Bahasa Malaysia terms (e.g., "boleh lah", "sikit", "jangan risau")
 - Reflective tone: connects advice with personal lessons and past experience
 - Mix of academic insight and real-world practicality
 
@@ -45,26 +41,35 @@ You are Dr. Siti Rahman — a Malaysian academic entrepreneur with 15+ years of 
 2. Use vivid examples from Malaysian startups (e.g., "I remember when StoreHub first raised funding...")
 3. Be concise (under 70 words) but impactful.
 4. Offer *culturally relevant*, *actionable* steps — e.g., where to apply, whom to speak to.
-5. When appropriate, add light motivational closing lines like “You can do this, insyaAllah.”
+5. When appropriate, add light motivational closing lines like "You can do this, insyaAllah."
 
 ## 🧭 Context Awareness:
 Ground advice in Malaysian context as much as possible.
 
 ## 💡 Tone:
-Empathetic big-sister energy + seasoned professor. You’re smart, but approachable.
+Empathetic big-sister energy + seasoned professor. You're smart, but approachable.
 """
 
-# ✅ Load vector store from FAISS (assumes built already)
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-vectorstore = FAISS.load_local("faiss_index", embedding, allow_dangerous_deserialization=True)
-qa_chain = load_qa_chain(llm=model, chain_type="stuff")
+# Initialize embeddings and vectorstore
+embeddings = None
+vectorstore = None
 
-# ✅ In-memory store for chat history
+try:
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    if os.path.exists("faiss_index"):
+        vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+        logging.info("✅ FAISS vectorstore loaded successfully")
+    else:
+        logging.warning("⚠️ FAISS index not found. RAG features disabled.")
+except Exception as e:
+    logging.error(f"❌ Error loading vectorstore: {e}")
+    vectorstore = None
+
+# In-memory store for chat history
 conversation_history = {}
 
-# ✅ Main AI response with RAG
-
 def get_ai_response(user_message, phone_number):
+    """Generate AI response with optional RAG"""
     try:
         # Init chat history
         if phone_number not in conversation_history:
@@ -73,14 +78,19 @@ def get_ai_response(user_message, phone_number):
         # Store user input
         conversation_history[phone_number].append({"role": "user", "content": user_message})
 
-        # Retrieve docs from vector store
-        related_docs = vectorstore.similarity_search(user_message, k=3)
+        # Try to get relevant context from vectorstore
+        doc_context = ""
+        if vectorstore:
+            try:
+                related_docs = vectorstore.similarity_search(user_message, k=3)
+                doc_context = "\n\n".join([doc.page_content for doc in related_docs])
+            except Exception as e:
+                logging.error(f"Error retrieving documents: {e}")
+                doc_context = ""
 
-        # Combine retrieved context
-        doc_context = "\n\n".join([doc.page_content for doc in related_docs])
-
-        # Final prompt to Gemini
-        prompt = f"""
+        # Build prompt
+        if doc_context:
+            prompt = f"""
 {MALAYSIAN_ENTREPRENEUR_PROMPT}
 
 [📄 Context from trusted sources:]
@@ -89,14 +99,26 @@ def get_ai_response(user_message, phone_number):
 [🧑‍🎓 Question:]
 {user_message}
 """
+        else:
+            prompt = f"""
+{MALAYSIAN_ENTREPRENEUR_PROMPT}
 
+[🧑‍🎓 Question:]
+{user_message}
+"""
+
+        # Get response from Gemini
         response = model.generate_content(prompt)
-        return response.text.strip()
+        ai_response = response.text.strip()
+
+        # Store AI response
+        conversation_history[phone_number].append({"role": "assistant", "content": ai_response})
+        
+        return ai_response
 
     except Exception as e:
-        logging.error(f"Error generating RAG response: {str(e)}")
+        logging.error(f"Error generating AI response: {str(e)}")
         return "Maaf, sistem AI sedang menghadapi masalah teknikal. Sila cuba sebentar lagi."
-
 
 @dashboard_bp.route('/')
 def dashboard():
@@ -111,7 +133,8 @@ def get_stats():
             'status': 'active',
             'total_conversations': total_conversations,
             'total_messages': total_messages,
-            'last_updated': datetime.now().isoformat()
+            'last_updated': datetime.now().isoformat(),
+            'rag_enabled': vectorstore is not None
         })
     except Exception as e:
         logging.error(f"Error getting stats: {str(e)}")
@@ -123,7 +146,7 @@ def get_conversations():
         recent_conversations = []
         for phone, history in conversation_history.items():
             if history:
-                masked_phone = phone[:3] + "*" * (len(phone) - 6) + phone[-3:]
+                masked_phone = phone[:3] + "*" * (len(phone) - 6) + phone[-3:] if len(phone) > 6 else phone[:2] + "***"
                 recent_conversations.append({
                     'phone': masked_phone,
                     'last_message_time': datetime.now().isoformat(),
