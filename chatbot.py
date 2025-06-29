@@ -8,7 +8,11 @@ import google.generativeai as genai
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # ✅ Initialize Gemini model (text-only)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = GenerativeModel("gemini-pro", generation_config={
+    "temperature": 0.7,
+    "top_p": 1,
+    "max_output_tokens": 512
+})
 
 # ✅ Flask Blueprint
 dashboard_bp = Blueprint('dashboard', __name__)
