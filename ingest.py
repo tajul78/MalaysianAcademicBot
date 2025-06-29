@@ -3,14 +3,14 @@
 import os
 import glob
 import pickle
-from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
+from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 # Load PDF documents from ./docs folder
 def load_documents(folder_path="./docs"):
-    loader = DirectoryLoader(
+    loader = UnstructuredPDFLoader(
         path=folder_path,
         glob="**/*.pdf",
         loader_cls=PyPDFLoader
