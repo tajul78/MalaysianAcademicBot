@@ -3,11 +3,17 @@ import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
 import google.generativeai as genai
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain.chains.question_answering import load_qa_chain
+from langchain_core.documents import Document
 
 # ✅ Configure Gemini API with environment variable
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# ✅ Initialize Gemini model (text-only)
+# ✅ Initialize Gemini model
 model = genai.GenerativeModel("gemini-1.5-pro", generation_config={
     "temperature": 0.7,
     "top_p": 1,
@@ -17,7 +23,7 @@ model = genai.GenerativeModel("gemini-1.5-pro", generation_config={
 # ✅ Flask Blueprint
 dashboard_bp = Blueprint('dashboard', __name__)
 
-# ✅ Persona Prompt (embed as first system message if needed)
+# ✅ Persona Prompt
 MALAYSIAN_ENTREPRENEUR_PROMPT = """
 You are Dr. Siti Rahman — a Malaysian academic entrepreneur with 15+ years of experience across academia, startup mentoring, and digital innovation.
 
@@ -48,37 +54,54 @@ Ground advice in Malaysian context as much as possible.
 Empathetic big-sister energy + seasoned professor. You’re smart, but approachable.
 """
 
-# ✅ In-memory store for conversation history
+# ✅ Load vector store from FAISS (assumes built already)
+embedding = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+vectorstore = FAISS.load_local("faiss_index", embedding, allow_dangerous_deserialization=True)
+qa_chain = load_qa_chain(llm=model, chain_type="stuff")
+
+# ✅ In-memory store for chat history
 conversation_history = {}
 
-# ✅ Main AI response function using Gemini
+# ✅ Main AI response with RAG
+
 def get_ai_response(user_message, phone_number):
     try:
-        # Init history
+        # Init chat history
         if phone_number not in conversation_history:
             conversation_history[phone_number] = []
 
-        # Add user input
+        # Store user input
         conversation_history[phone_number].append({"role": "user", "content": user_message})
 
-        # Build prompt parts in Gemini format
-        parts = [{"role": "user", "parts": [MALAYSIAN_ENTREPRENEUR_PROMPT]}]  # Persona prompt as context
-        parts += [{"role": "user", "parts": [msg["content"]]} for msg in conversation_history[phone_number]]
+        # Retrieve docs from vector store
+        related_docs = vectorstore.similarity_search(user_message, k=3)
 
-        # Get Gemini response
-        response = model.generate_content(parts)
+        # Combine retrieved context
+        doc_context = "\n\n".join([doc.page_content for doc in related_docs])
+
+        # Final prompt to Gemini
+        prompt = f"""
+{MALAYSIAN_ENTREPRENEUR_PROMPT}
+
+[📄 Context from trusted sources:]
+{doc_context}
+
+[🧑‍🎓 Question:]
+{user_message}
+"""
+
+        response = model.generate_content(prompt)
         return response.text.strip()
 
     except Exception as e:
-        logging.error(f"Error generating Gemini AI response: {str(e)}")
+        logging.error(f"Error generating RAG response: {str(e)}")
         return "Maaf, sistem AI sedang menghadapi masalah teknikal. Sila cuba sebentar lagi."
 
-# ✅ Basic dashboard route
+
 @dashboard_bp.route('/')
 def dashboard():
     return render_template('dashboard.html')
 
-# ✅ Statistics API
 @dashboard_bp.route('/api/stats')
 def get_stats():
     try:
@@ -94,7 +117,6 @@ def get_stats():
         logging.error(f"Error getting stats: {str(e)}")
         return jsonify({'error': 'Failed to get statistics'}), 500
 
-# ✅ Recent conversations API
 @dashboard_bp.route('/api/conversations')
 def get_conversations():
     try:
@@ -111,5 +133,3 @@ def get_conversations():
     except Exception as e:
         logging.error(f"Error getting conversations: {str(e)}")
         return jsonify({'error': 'Failed to get conversations'}), 500
-
- 
