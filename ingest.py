@@ -3,7 +3,11 @@ import glob
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+<<<<<<< HEAD
 from langchain_community.embeddings import HuggingFaceEmbeddings
+=======
+from langchain_community.embeddings import HuggingFaceEmbeddings 
+>>>>>>> 563db6ecce4ced84f35e92120412b0cae34979af
 
 def load_documents(folder_path="./docs"):
     filepaths = glob.glob(os.path.join(folder_path, "*.txt"))
