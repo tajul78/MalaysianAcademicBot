@@ -6,7 +6,7 @@ import google.generativeai as genai
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.chains.question_answering import load_qa_chain
 from langchain_core.documents import Document
 
@@ -55,7 +55,7 @@ Empathetic big-sister energy + seasoned professor. You’re smart, but approacha
 """
 
 # ✅ Load vector store from FAISS (assumes built already)
-embedding = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 vectorstore = FAISS.load_local("faiss_index", embedding, allow_dangerous_deserialization=True)
 qa_chain = load_qa_chain(llm=model, chain_type="stuff")
 
