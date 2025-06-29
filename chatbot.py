@@ -1,4 +1,3 @@
-import openai
 import os
 import traceback
 import logging
@@ -7,9 +6,6 @@ from flask import Blueprint, render_template, jsonify
 from openai import OpenAI
 
 # Initialize OpenAI client
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
-
 dashboard_bp = Blueprint('dashboard', __name__)
 
 # Malaysian Academic Entrepreneur System Prompt
@@ -46,44 +42,34 @@ Keep responses conversational, helpful, and under 200 words unless detailed expl
 conversation_history = {}
 
 def get_ai_response(user_message, phone_number):
-    """Get response from OpenAI GPT-4o with Malaysian entrepreneur persona"""
     try:
-        # Get or create conversation history for this phone number
+        # Initialize conversation history if needed
         if phone_number not in conversation_history:
             conversation_history[phone_number] = []
-        
-        # Add user message to history
-        conversation_history[phone_number].append({"role": "user", "content": user_message})
-        
-        # Keep only last 10 messages to manage token usage
+
+        # Append user message
+        conversation_history[phone_number].append({"role": "user", "parts": [user_message]})
+
+        # Trim history to last 10
         if len(conversation_history[phone_number]) > 10:
             conversation_history[phone_number] = conversation_history[phone_number][-10:]
-        
-        # Prepare messages for API call
-        messages = [{"role": "system", "content": MALAYSIAN_ENTREPRENEUR_PROMPT}]
-        messages.extend(conversation_history[phone_number])
-        
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            max_tokens=300,
-            temperature=0.7
-        )
-        
-        ai_response = response.choices[0].message.content
-        
-        # Add AI response to history
-        conversation_history[phone_number].append({"role": "assistant", "content": ai_response})
-        
-        logging.info(f"Generated AI response for {phone_number}: {ai_response[:50]}...")
-        return ai_response
-        
-    except Exception as e:
-        logging.error("Error generating AI response:\n" + traceback.format_exc())
-        return "Maaf, I'm experiencing some technical difficulties right now. Please try again in a moment. Terima kasih for your patience!"
 
+        # Create Gemini model and chat session
+        model = genai.GenerativeModel("gemini-pro")
+        chat = model.start_chat(history=conversation_history[phone_number])
+
+        # Send user message
+        gemini_response = chat.send_message(user_message)
+
+        # Append bot reply to history
+        conversation_history[phone_number].append({"role": "model", "parts": [gemini_response.text]})
+
+        return gemini_response.text
+
+    except Exception as e:
+        logging.error(f"Error generating Gemini AI response: {str(e)}")
+        return "Maaf, sistem AI sedang menghadapi masalah teknikal. Sila cuba sebentar lagi."
+        
 @dashboard_bp.route('/')
 def dashboard():
     """Simple dashboard to monitor chatbot activity"""
