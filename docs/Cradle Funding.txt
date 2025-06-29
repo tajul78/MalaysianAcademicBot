@@ -1,5 +1,3 @@
-
-
 Cradle Funding: A Comprehensive Guideline for Malaysian Tech Start-ups
 
 Malaysia's Cradle Fund has evolved into the nation's principal springboard for early-stage technology companies, disbursing more than RM264 million to over 1,000 start-ups while achieving the highest commercialisation rate among government grants[1] [2] . This report distils Cradle's mandates, instruments, processes and success factors into an actionable guideline that founders can later adapt into a plain-text checklist.
@@ -44,25 +42,55 @@ Added Value: Recipients enter a structured coaching path and are positioned for 
 Cradle applies a uniform matrix across its grant tiers that founders should review before drafting applications[9] [11] [7] .
 
 
-Criterion
-CIP SPARK
-CIP SPRINT
-CIP IGNITE     CIP ACCELERATEAge of Company
-= 5 years [9]
-= 7 years [11]No explicit cap but early stage[8]
-= 7 years [7]Malaysian Ownership= 51% or majority Malaysian staff[9]
-Same[11]
-Same[8]
-Same[7]
-Paid-up Capital
-None[9]=
-RM10,000 [11]
-= RM10,000 [8]
-= RM10,000 [7]Revenue Cap< RM3 m [9]< RM5 m [11]< RM5 m [8]< RM5 m [7]
-IP RightsMust own or license IP [9]
-Same[11]
-Same[8]
-Same[7]The CSV dataset summarising these thresholds can be used as a template for internal compliance checks.
+Criterion
+
+CIP SPARK
+
+CIP SPRINT
+
+CIP IGNITE
+     CIP ACCELERATE
+Age of Company
+
+= 5 years [9]
+
+= 7 years [11]
+No explicit cap but early stage[8]
+
+= 7 years [7]
+Malaysian Ownership
+= 51% or majority Malaysian staff[9]
+
+Same[11]
+
+Same[8]
+
+Same[7]
+
+Paid-up Capital
+
+None[9]
+=
+RM10,000 [11]
+
+= RM10,000 [8]
+
+= RM10,000 [7]
+Revenue Cap
+< RM3 m [9]
+< RM5 m [11]
+< RM5 m [8]
+< RM5 m [7]
+
+IP Rights
+Must own or license IP [9]
+
+Same[11]
+
+Same[8]
+
+Same[7]
+The CSV dataset summarising these thresholds can be used as a template for internal compliance checks.
 
 4. Funding Mechanics and Disbursement Rules
 Cradle operates conditional grants: money can be clawed back if milestones are not met, ensuring disciplined utilisation[6] [11] . Disbursements are typically front-loaded up to 30% and balanced by reimbursements for audited expenses[5] [13] . CIP ACCELERATE introduces equity- conversion triggers that allow Cradle to take a minority stake if the company raises subsequent rounds, aligning long-term incentives[7] [15] .
@@ -94,7 +122,7 @@ When benchmarked against peer schemes such as America's Seed Fund (SBIR) and the
 
 Global Early-Stage Funding Programs Comparison
 
-Malaysia's early-stage funding pool reached MYR1.5 billion (˜ USD368 million) between 2022 and mid-2024, reflecting rising investor confidence as Kuala Lumpur broke into the Global Startup Ecosystem Report's top-20 emerging hubs[4] [27] .
+Malaysia's early-stage funding pool reached MYR1.5 billion (Ëœ USD368 million) between 2022 and mid-2024, reflecting rising investor confidence as Kuala Lumpur broke into the Global Startup Ecosystem Report's top-20 emerging hubs[4] [27] .
 
 10. Common Pitfalls and Best-Practice Tips
 Incomplete IP Documentation - Ensure patents, licences or exclusive-use letters are stamped and valid for the funding period [11] [9] .
