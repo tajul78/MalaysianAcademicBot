@@ -16,6 +16,13 @@ def load_documents(folder_path="./docs"):
         documents.extend(loader.load())
     return documents
 
+# Debug print a sample document content
+if docs:
+    print("🔎 Sample document content preview:")
+    print(docs[0].page_content[:500])
+else:
+    print("❌ No documents loaded. Check file paths or format.")
+
 # Step 2: Split documents into chunks
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
@@ -23,6 +30,9 @@ def split_documents(documents):
         chunk_overlap=150,
     )
     return splitter.split_documents(documents)
+if not chunks:
+    print("❌ No chunks created. Possible empty or non-extractable PDF.")
+    exit(1)
 
 # Step 3: Embed chunks and store using FAISS
 def build_faiss_index(chunks, persist_path="faiss_index"):
