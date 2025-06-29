@@ -5,7 +5,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# Load documents from ./docs folder
 def load_documents(folder_path="./docs"):
     filepaths = glob.glob(os.path.join(folder_path, "*.txt"))
     documents = []
@@ -14,7 +13,6 @@ def load_documents(folder_path="./docs"):
         documents.extend(loader.load())
     return documents
 
-# Split text into chunks
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
@@ -22,11 +20,10 @@ def split_documents(documents):
     )
     return splitter.split_documents(documents)
 
-# Embed and store in FAISS
 def build_faiss_index(chunks, persist_path="faiss_index"):
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )  # No API key needed
+    )
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(persist_path)
     print(f"✅ Index saved to {persist_path}")
