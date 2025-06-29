@@ -1,5 +1,3 @@
-# ingest.py
-
 import os
 import glob
 from langchain_community.document_loaders import TextLoader
@@ -14,7 +12,7 @@ def load_documents(folder_path="./docs"):
 
     for path in filepaths:
         try:
-            loader = TextLoader(path)
+            loader = TextLoader(path, encoding='utf-8')
             documents.extend(loader.load())
         except Exception as e:
             print(f"⚠️ Error loading {path}: {e}")
