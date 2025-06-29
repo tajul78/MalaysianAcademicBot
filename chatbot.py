@@ -4,8 +4,9 @@ import traceback
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
-from google.generativeai import GenerativeModel
+from google.generativeai import configure, GenerativeModel
 
+configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = GenerativeModel('gemini-pro')
 
 
