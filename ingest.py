@@ -1,5 +1,3 @@
-# ingest.py
-
 import os
 import glob
 from langchain_community.document_loaders import PyPDFLoader
@@ -23,6 +21,9 @@ def split_documents(documents):
         chunk_overlap=100,
     )
     return splitter.split_documents(documents)
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # 3. Embed chunks and store in FAISS
 def build_faiss_index(chunks, persist_path="faiss_index"):
