@@ -5,33 +5,36 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# 1. Load all .txt documents from ./docs
+# Step 1: Load all .txt files from ./docs
 def load_documents(folder_path="./docs"):
     filepaths = glob.glob(os.path.join(folder_path, "*.txt"))
     documents = []
     for path in filepaths:
-        loader = TextLoader(path)
+        loader = TextLoader(path, encoding="utf-8")
         documents.extend(loader.load())
     return documents
 
-# 2. Split documents into chunks
+# Step 2: Split documents into chunks
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
-        chunk_overlap=150,
+        chunk_overlap=100,
     )
     return splitter.split_documents(documents)
 
-# 3. Create FAISS vector index from chunks
+# Step 3: Embed chunks and build FAISS index
 def build_faiss_index(chunks, persist_path="faiss_index"):
+    if not chunks:
+        print("❌ No chunks to embed. Aborting index build.")
+        return
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(persist_path)
-    print(f"✅ FAISS index saved to '{persist_path}'")
+    print(f"✅ Index saved to {persist_path}")
 
-# 4. Run everything
+# Step 4: Run the pipeline
 if __name__ == "__main__":
-    print("🔍 Loading .txt documents from ./docs...")
+    print("🔍 Loading documents...")
     docs = load_documents()
     print(f"📄 {len(docs)} documents loaded.")
 
@@ -41,4 +44,5 @@ if __name__ == "__main__":
 
     print("📦 Building FAISS vectorstore...")
     build_faiss_index(chunks)
+
     print("🚀 Done.")
