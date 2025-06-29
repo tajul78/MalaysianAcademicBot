@@ -58,10 +58,14 @@
         </div>
 
         <!-- Recent Conversations -->
-        <div class="card p-3 mb-4">
-            <h5>💬 Recent Conversations</h5>
-            <ul id="conversation-list"></ul>
-            <button onclick="loadConversations()" class="btn btn-outline-light btn-sm">🔄 Refresh</button>
+       <div class="card mt-4">
+          <div class="card-body">
+            <h5 class="card-title">💬 Recent Conversations</h5>
+            <div id="conversation-list">
+               <div class="text-muted">Loading...</div>
+          </div>
+            <button class="btn btn-primary mt-3" onclick="loadConversations()">🔄 Refresh</button>
+          </div>
         </div>
 
         <!-- Configuration Status -->
@@ -71,9 +75,6 @@
                 <li><span class="green-dot"></span><strong>Gemini Integration</strong><br>Gemini-Pro model configured</li>
                 <li><span class="green-dot"></span><strong>Twilio WhatsApp</strong><br>Webhook endpoint active</li>
             </ul>
-            <small>Webhook URL: 
-                <code>https://malaysianacademicbot.onrender.com/webhook/whatsapp</code>
-            </small>
         </div>
     </div>
 
@@ -87,19 +88,27 @@
         }
 
         async function loadConversations() {
-            const res = await fetch('/api/conversations');
-            const data = await res.json();
-            const list = document.getElementById('conversation-list');
-            list.innerHTML = '';
-            data.forEach(conv => {
-                const li = document.createElement('li');
-                li.innerText = `${conv.phone} – ${conv.message_count} messages`;
-                list.appendChild(li);
-            });
-        }
+    const res = await fetch('/api/conversations');
+    const data = await res.json();
+    const container = document.getElementById('conversation-list');
+    container.innerHTML = '';
 
-        loadStats();
-        loadConversations();
+    if (data.length === 0) {
+      container.innerHTML = '<div class="text-muted">No recent conversations found.</div>';
+    } else {
+      data.forEach(conv => {
+        const el = document.createElement('div');
+        el.className = 'conversation-item';
+        el.innerHTML = `
+          <strong>${conv.phone}</strong> – ${conv.message_count} messages
+          <div class="text-muted"><em>"${conv.last_message}"</em></div>
+        `;
+        container.appendChild(el);
+      });
+    }
+  }
+
+  window.onload = loadConversations;
     </script>
 </body>
 </html>
