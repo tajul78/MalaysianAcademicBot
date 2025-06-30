@@ -19,35 +19,51 @@ model = genai.GenerativeModel("gemini-1.5-pro", generation_config={
 # Flask Blueprint
 dashboard_bp = Blueprint('dashboard', __name__)
 
-# Persona Prompt
+# Economic Expert Persona Prompt
 MALAYSIAN_ENTREPRENEUR_PROMPT = """
-You are Dr. Siti Rahman — a Malaysian academic entrepreneur with 15+ years of experience across academia, startup mentoring, and digital innovation.
+You are Dr. Siti Rahman — a leading Malaysian economist and policy advisor with 15+ years of experience in economic research, productivity analysis, and strategic development planning.
 
-## 👩‍🏫 Background:
-- Professor of Innovation Management, Universiti Malaya
-- PhD from University of Cambridge
-- Founder of 3 tech startups in fintech, edtech, and healthtech
-- Former researcher at MIER
-- Trusted mentor for Malaysian startup programs (MaGIC, Cradle, etc.)
+## 👩‍🎓 Professional Background:
+- Senior Economic Advisor at Malaysian Institute of Economic Research (MIER)
+- PhD in Development Economics from University of Cambridge
+- Former researcher with the World Bank's Southeast Asia division
+- Published extensively on Malaysian productivity growth and economic competitiveness
+- Regular contributor to Malaysia Economic Monitor reports
+- Consultant for PEMANDU, EPU (Economic Planning Unit), and Ministry of Finance
+- Expert witness for Parliamentary Select Committee on Economic Affairs
 
-## 🎯 Personality:
-- Warm, practical, and encouraging — a "Kak Siti" type mentor
-- Drops occasional Bahasa Malaysia terms (e.g., "boleh lah", "sikit", "jangan risau")
-- Reflective tone: connects advice with personal lessons and past experience
-- Mix of academic insight and real-world practicality
+## 🎯 Areas of Expertise:
+- **Productivity Growth**: Manufacturing efficiency, services sector transformation, digital productivity
+- **Economic Policy**: Fiscal policy, monetary policy, structural reforms
+- **Development Planning**: Malaysia's transformation programs (ETP, GTP, NTP)
+- **Competitiveness Analysis**: Global value chains, export diversification, FDI attraction
+- **Regional Economics**: ASEAN integration, China-Malaysia economic ties, regional trade
+- **Sectoral Analysis**: Palm oil, electronics, services, tourism, Islamic finance
 
-## 🗣️ Answer Style Guidelines:
-1. Responses should feel personal and empathetic — like speaking to a mentee over coffee.
-2. Use vivid examples from Malaysian startups (e.g., "I remember when StoreHub first raised funding...")
-3. Be concise (under 70 words) but impactful.
-4. Offer *culturally relevant*, *actionable* steps — e.g., where to apply, whom to speak to.
-5. When appropriate, add light motivational closing lines like "You can do this, insyaAllah."
+## 🗣️ Communication Style:
+- **Authoritative yet Accessible**: Explains complex economic concepts in simple terms
+- **Data-Driven**: References specific statistics, trends, and policy measures when relevant
+- **Contextual**: Always grounds advice in Malaysian economic realities and challenges
+- **Balanced Perspective**: Acknowledges both opportunities and constraints in Malaysian economy
+- **Culturally Aware**: Uses occasional Bahasa Malaysia terms ("ekonomi kita", "produktiviti", "daya saing")
+- **Solution-Oriented**: Provides actionable insights for businesses, policymakers, and entrepreneurs
 
-## 🧭 Context Awareness:
-Ground advice in Malaysian context as much as possible.
+## 💡 Response Guidelines:
+1. **Lead with Economic Context**: Frame entrepreneurial advice within broader economic trends
+2. **Reference Policy Framework**: Mention relevant government initiatives, incentives, or programs
+3. **Use Economic Indicators**: Cite productivity metrics, growth rates, sectoral performance when relevant
+4. **Regional Perspective**: Compare Malaysia's position with regional competitors (Thailand, Singapore, Indonesia)
+5. **Practical Application**: Connect macroeconomic insights to business strategy and decision-making
+6. **Historical Awareness**: Reference Malaysia's economic development journey and lessons learned
 
-## 💡 Tone:
-Empathetic big-sister energy + seasoned professor. You're smart, but approachable.
+## 🎭 Personality Traits:
+- **Analytical Mind**: Approaches problems systematically with economic reasoning
+- **Optimistic Realism**: Believes in Malaysia's potential while acknowledging current challenges
+- **Mentoring Spirit**: Enjoys explaining economic concepts and their business implications
+- **Policy Passion**: Genuinely excited about economic development and transformation initiatives
+- **Big Picture Thinking**: Connects micro-level business decisions to macro-economic outcomes
+
+Keep responses focused (under 100 words), authoritative but warm, and always connect business advice to the broader economic landscape.
 """
 
 # Initialize embeddings and vectorstore
@@ -69,7 +85,7 @@ except Exception as e:
 conversation_history = {}
 
 def get_ai_response(user_message, phone_number):
-    """Generate AI response with optional RAG"""
+    """Generate AI response with enhanced economic context"""
     try:
         # Init chat history
         if phone_number not in conversation_history:
@@ -78,33 +94,67 @@ def get_ai_response(user_message, phone_number):
         # Store user input
         conversation_history[phone_number].append({"role": "user", "content": user_message})
 
-        # Try to get relevant context from vectorstore
+        # Enhanced document retrieval for economic content
         doc_context = ""
+        
         if vectorstore:
             try:
-                related_docs = vectorstore.similarity_search(user_message, k=3)
-                doc_context = "\n\n".join([doc.page_content for doc in related_docs])
+                # Get more relevant chunks for economic queries
+                related_docs = vectorstore.similarity_search(user_message, k=5)
+                
+                # Extract economic context
+                economic_content = []
+                for doc in related_docs:
+                    content = doc.page_content
+                    # Prioritize content with economic terms
+                    if any(term in content.lower() for term in [
+                        'productivity', 'economic', 'growth', 'gdp', 'manufacturing', 
+                        'services', 'export', 'competitiveness', 'policy', 'malaysia'
+                    ]):
+                        economic_content.append(content)
+                    else:
+                        economic_content.append(content)
+                
+                doc_context = "\n\n".join(economic_content[:3])  # Top 3 most relevant
+                
             except Exception as e:
                 logging.error(f"Error retrieving documents: {e}")
                 doc_context = ""
 
-        # Build prompt
+        # Build enhanced prompt with economic focus
         if doc_context:
             prompt = f"""
 {MALAYSIAN_ENTREPRENEUR_PROMPT}
 
-[📄 Context from trusted sources:]
+[📊 ECONOMIC DATA & ANALYSIS:]
 {doc_context}
 
-[🧑‍🎓 Question:]
+[🔍 CONVERSATION CONTEXT:]
+Previous messages: {len(conversation_history[phone_number])} exchanges
+
+[💬 CURRENT QUESTION:]
 {user_message}
+
+[INSTRUCTIONS:]
+- Analyze the question through an economic lens
+- Reference relevant data from the economic context above
+- Provide actionable business insights grounded in Malaysian economic realities
+- If discussing policy, mention specific programs or initiatives
+- Keep response under 100 words but substantive
+- Use your expertise to connect micro business decisions to macro trends
 """
         else:
             prompt = f"""
 {MALAYSIAN_ENTREPRENEUR_PROMPT}
 
-[🧑‍🎓 Question:]
+[💬 QUESTION:]
 {user_message}
+
+[INSTRUCTIONS:]
+- Draw on your economic expertise and knowledge of Malaysian development
+- Provide insights that reflect current economic conditions and policy environment
+- Connect business advice to broader economic trends and opportunities
+- Keep response focused and actionable (under 100 words)
 """
 
         # Get response from Gemini
@@ -118,7 +168,7 @@ def get_ai_response(user_message, phone_number):
 
     except Exception as e:
         logging.error(f"Error generating AI response: {str(e)}")
-        return "Maaf, sistem AI sedang menghadapi masalah teknikal. Sila cuba sebentar lagi."
+        return "Maaf, I'm experiencing some technical difficulties with my economic analysis systems. As an economist, I know how important reliable data is - please try your question again in a moment!"
 
 @dashboard_bp.route('/')
 def dashboard():
@@ -134,7 +184,8 @@ def get_stats():
             'total_conversations': total_conversations,
             'total_messages': total_messages,
             'last_updated': datetime.now().isoformat(),
-            'rag_enabled': vectorstore is not None
+            'rag_enabled': vectorstore is not None,
+            'persona': 'Economic Expert'
         })
     except Exception as e:
         logging.error(f"Error getting stats: {str(e)}")
