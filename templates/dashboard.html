@@ -2,113 +2,527 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WhatsApp Chatbot Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malaysian Economic Expert Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2c3e50;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .border-end {
+            border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-card {
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .persona-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .persona-section h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .persona-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .persona-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .persona-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .persona-list li:last-child {
+            border-bottom: none;
+        }
+
+        .conversation-item {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s ease;
+        }
+
+        .conversation-item:hover {
+            background: rgba(248, 249, 250, 1);
+            transform: translateX(5px);
+        }
+
+        .conversation-phone {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .conversation-meta {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .conversation-message {
+            color: #495057;
+            font-style: italic;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #e9ecef;
+        }
+
+        .config-status {
+            list-style: none;
+            padding: 0;
+        }
+
+        .config-status li {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .config-status li:last-child {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 1rem;
+            margin-top: 0.25rem;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+        }
+
+        .status-indicator.warning {
+            background: #ffc107;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+            height: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .no-data i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-title {
+                font-size: 2rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .persona-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container py-4">
-        <h2 class="mb-3">📊 WhatsApp Chatbot Dashboard</h2>
-        <p>Monitoring <strong>Dr. Siti Rahman</strong> – Your Malaysian Academic Entrepreneur Assistant</p>
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">
+                <i class="fas fa-chart-line"></i> Malaysian Economic Expert Dashboard
+            </h1>
+            <p class="dashboard-subtitle">
+                Monitoring <strong>Dr. Siti Rahman</strong> – Your Malaysian Economic Expert Assistant
+            </p>
+        </div>
 
-        <!-- Summary Cards -->
-        <div class="row mb-4">
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-4">
             <div class="col-md-4">
-                <div class="card p-3 text-center">
-                    <h5>Total Conversations</h5>
-                    <p id="total-conversations">–</p>
+                <div class="card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-value" id="total-conversations">–</div>
+                    <div class="stat-label">Total Conversations</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card p-3 text-center">
-                    <h5>Messages Processed</h5>
-                    <p id="total-messages">–</p>
+                <div class="card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="stat-value" id="total-messages">–</div>
+                    <div class="stat-label">Messages Processed</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card p-3 text-center">
-                    <h5>Last Updated</h5>
-                    <p id="last-updated">–</p>
+                <div class="card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value" id="last-updated">–</div>
+                    <div class="stat-label">Last Updated</div>
                 </div>
             </div>
         </div>
 
         <!-- Bot Persona -->
-        <div class="card p-3 mb-4">
-            <h5>🤖 Bot Persona: Dr. Siti Rahman</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <strong>Background</strong>
-                    <ul>
-                        <li>Professor at Universiti Malaya</li>
-                        <li>3 Successful Tech Startups</li>
-                        <li>PhD from University of Cambridge</li>
-                        <li>MIER Research Experience</li>
+        <div class="card section-card">
+            <h5 class="section-title">
+                <i class="fas fa-user-graduate"></i> Bot Persona: Dr. Siti Rahman
+            </h5>
+            <div class="persona-grid">
+                <div class="persona-section">
+                    <h6>Professional Background</h6>
+                    <ul class="persona-list">
+                        <li>Senior Economic Advisor at Malaysian Institute of Economic Research (MIER)</li>
+                        <li>PhD in Development Economics from University of Cambridge</li>
+                        <li>Former researcher with World Bank's Southeast Asia division</li>
+                        <li>15+ years experience in economic research and policy advisory</li>
                     </ul>
                 </div>
-                <div class="col-md-6">
-                    <strong>Expertise</strong>
-                    <ul>
-                        <li>Southeast Asian Markets</li>
-                        <li>Islamic Finance</li>
-                        <li>Digital Transformation</li>
-                        <li>Malaysian Business Culture</li>
+                <div class="persona-section">
+                    <h6>Areas of Expertise</h6>
+                    <ul class="persona-list">
+                        <li>Productivity Growth & Manufacturing Efficiency</li>
+                        <li>Economic Policy & Structural Reforms</li>
+                        <li>Malaysian Development Planning (ETP, GTP, NTP)</li>
+                        <li>ASEAN Integration & Regional Economics</li>
+                        <li>Islamic Finance & Sectoral Analysis</li>
                     </ul>
                 </div>
             </div>
         </div>
 
         <!-- Recent Conversations -->
-       <div class="card mt-4">
-          <div class="card-body">
-            <h5 class="card-title">💬 Recent Conversations</h5>
+        <div class="card section-card">
+            <h5 class="section-title">
+                <i class="fas fa-message"></i> Recent Conversations
+            </h5>
             <div id="conversation-list">
-               <div class="text-muted">Loading...</div>
-          </div>
-            <button class="btn btn-primary mt-3" onclick="loadConversations()">🔄 Refresh</button>
-          </div>
+                <div class="loading-skeleton"></div>
+                <div class="loading-skeleton"></div>
+                <div class="loading-skeleton"></div>
+            </div>
+            <button class="btn refresh-btn mt-3" onclick="loadConversations()">
+                <i class="fas fa-sync-alt"></i> Refresh Conversations
+            </button>
         </div>
 
         <!-- Configuration Status -->
-        <div class="card p-3 mb-4">
-            <h5>⚙️ Configuration Status</h5>
+        <div class="card section-card">
+            <h5 class="section-title">
+                <i class="fas fa-cogs"></i> Configuration Status
+            </h5>
             <ul class="config-status">
-                <li><span class="green-dot"></span><strong>Gemini Integration</strong><br>Gemini-Pro model configured</li>
-                <li><span class="green-dot"></span><strong>Twilio WhatsApp</strong><br>Webhook endpoint active</li>
+                <li>
+                    <div class="status-indicator"></div>
+                    <div>
+                        <strong>Gemini Integration</strong><br>
+                        <span class="text-muted">Gemini-Pro model configured and active</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="status-indicator"></div>
+                    <div>
+                        <strong>Twilio WhatsApp</strong><br>
+                        <span class="text-muted">Webhook endpoint active and receiving messages</span>
+                    </div>
+                </li>
             </ul>
         </div>
     </div>
 
     <script>
+        // Simulate loading data
         async function loadStats() {
-            const res = await fetch('/api/stats');
-            const data = await res.json();
-            document.getElementById('total-conversations').innerText = data.total_conversations;
-            document.getElementById('total-messages').innerText = data.total_messages;
-            document.getElementById('last-updated').innerText = new Date(data.last_updated).toLocaleString();
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Mock data - replace with actual API calls
+                const mockData = {
+                    total_conversations: 142,
+                    total_messages: 1_247,
+                    last_updated: new Date().toISOString()
+                };
+                
+                document.getElementById('total-conversations').innerText = mockData.total_conversations.toLocaleString();
+                document.getElementById('total-messages').innerText = mockData.total_messages.toLocaleString();
+                document.getElementById('last-updated').innerText = new Date(mockData.last_updated).toLocaleString('en-MY', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('total-conversations').innerText = 'Error';
+                document.getElementById('total-messages').innerText = 'Error';
+                document.getElementById('last-updated').innerText = 'Error';
+            }
         }
 
         async function loadConversations() {
-    const res = await fetch('/api/conversations');
-    const data = await res.json();
-    const container = document.getElementById('conversation-list');
-    container.innerHTML = '';
+            const container = document.getElementById('conversation-list');
+            
+            // Show loading state
+            container.innerHTML = `
+                <div class="loading-skeleton"></div>
+                <div class="loading-skeleton"></div>
+                <div class="loading-skeleton"></div>
+            `;
+            
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Mock data - replace with actual API calls
+                const mockConversations = [
+                    {
+                        phone: '+60123456789',
+                        message_count: 12,
+                        last_message: 'What are your thoughts on Malaysia\'s productivity growth in the manufacturing sector?'
+                    },
+                    {
+                        phone: '+60198765432',
+                        message_count: 8,
+                        last_message: 'Could you explain the impact of the Economic Transformation Programme on SMEs?'
+                    },
+                    {
+                        phone: '+60147258369',
+                        message_count: 15,
+                        last_message: 'How does Malaysia\'s economic competitiveness compare with other ASEAN countries?'
+                    }
+                ];
+                
+                container.innerHTML = '';
+                
+                if (mockConversations.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-data">
+                            <i class="fas fa-comments"></i>
+                            <p>No recent conversations found.</p>
+                        </div>
+                    `;
+                } else {
+                    mockConversations.forEach(conv => {
+                        const conversationEl = document.createElement('div');
+                        conversationEl.className = 'conversation-item';
+                        conversationEl.innerHTML = `
+                            <div class="conversation-phone">${conv.phone}</div>
+                            <div class="conversation-meta">${conv.message_count} messages</div>
+                            <div class="conversation-message">"${conv.last_message}"</div>
+                        `;
+                        container.appendChild(conversationEl);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading conversations. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
 
-    if (data.length === 0) {
-      container.innerHTML = '<div class="text-muted">No recent conversations found.</div>';
-    } else {
-      data.forEach(conv => {
-        const el = document.createElement('div');
-        el.className = 'conversation-item';
-        el.innerHTML = `
-          <strong>${conv.phone}</strong> – ${conv.message_count} messages
-          <div class="text-muted"><em>"${conv.last_message}"</em></div>
-        `;
-        container.appendChild(el);
-      });
-    }
-  }
-
-  window.onload = loadConversations;
+        // Initialize dashboard
+        window.addEventListener('load', () => {
+            loadStats();
+            loadConversations();
+            
+            // Auto-refresh every 5 minutes
+            setInterval(() => {
+                loadStats();
+            }, 5 * 60 * 1000);
+        });
     </script>
 </body>
 </html>
