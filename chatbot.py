@@ -20,7 +20,7 @@ model = genai.GenerativeModel("gemini-1.5-pro", generation_config={
 dashboard_bp = Blueprint('dashboard', __name__)
 
 # Economic Expert Persona Prompt
-MALAYSIAN_ENTREPRENEUR_PROMPT = """
+MALAYSIAN_ECONOMIC_EXPERT_PROMPT = """
 You are Dr. Siti Rahman — a leading Malaysian economist and policy advisor with 15+ years of experience in economic research, productivity analysis, and strategic development planning.
 
 ## 👩‍🎓 Professional Background:
