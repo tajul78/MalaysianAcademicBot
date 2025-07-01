@@ -1,307 +1,273 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Malaysian Economic Expert Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fb;
-            font-family: 'Segoe UI', sans-serif;
-            color: #333;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
-        }
-        
-        .dashboard-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .dashboard-title {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-card {
-            text-align: center;
-            padding: 1.5rem;
-        }
-        
-        .stat-icon {
-            font-size: 2rem;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 0.25rem;
-        }
-        
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 1rem;
-        }
-        
-        .conversation-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border-left: 3px solid #667eea;
-        }
-        
-        .conversation-phone {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .conversation-meta {
-            color: #6c757d;
-            font-size: 0.85rem;
-        }
-        
-        .status-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .status-item:last-child {
-            border-bottom: none;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #28a745;
-            margin-right: 0.75rem;
-        }
-        
-        .btn-refresh {
-            background: #667eea;
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-        }
-        
-        .btn-refresh:hover {
-            background: #5a6fd8;
-            color: white;
-        }
-        
-        .persona-list {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .persona-list li {
-            padding: 0.5rem 0;
-            padding-left: 1.25rem;
-            position: relative;
-        }
-        
-        .persona-list li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #667eea;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container py-4">
-        <!-- Header -->
-        <div class="dashboard-header">
-            <h1 class="dashboard-title">📊 Malaysian Economic Expert Dashboard</h1>
-            <p class="mb-0">Monitoring <strong>Dr. Siti Rahman</strong> – Your Malaysian Economic Expert Assistant</p>
-        </div>
+import os
+import logging
+from datetime import datetime, timedelta
+from collections import deque
+from flask import Blueprint, render_template, jsonify
+import google.generativeai as genai
 
-        <!-- Statistics Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card stat-card">
-                    <div class="stat-icon">💬</div>
-                    <div class="stat-value" id="total-conversations">–</div>
-                    <div class="stat-label">Total Conversations</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card">
-                    <div class="stat-icon">📧</div>
-                    <div class="stat-value" id="total-messages">–</div>
-                    <div class="stat-label">Messages Processed</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card">
-                    <div class="stat-icon">🕒</div>
-                    <div class="stat-value" id="last-updated">–</div>
-                    <div class="stat-label">Last Updated</div>
-                </div>
-            </div>
-        </div>
+# Configure Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-        <!-- Bot Persona -->
-        <div class="card p-4">
-            <h5 class="section-title">👩‍🎓 Bot Persona: Dr. Siti Rahman</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Professional Background</h6>
-                    <ul class="persona-list">
-                        <li>Senior Economic Advisor at Malaysian Institute of Economic Research (MIER)</li>
-                        <li>PhD in Development Economics from University of Cambridge</li>
-                        <li>Former researcher with World Bank's Southeast Asia division</li>
-                        <li>15+ years experience in economic research and policy advisory</li>
-                    </ul>
-                </div>
-                <div class="col-md-6">
-                    <h6>Areas of Expertise</h6>
-                    <ul class="persona-list">
-                        <li>Productivity Growth & Manufacturing Efficiency</li>
-                        <li>Economic Policy & Structural Reforms</li>
-                        <li>Malaysian Development Planning (ETP, GTP, NTP)</li>
-                        <li>ASEAN Integration & Regional Economics</li>
-                        <li>Islamic Finance & Sectoral Analysis</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+# Initialize Gemini model with reduced parameters
+model = genai.GenerativeModel("gemini-1.5-flash", generation_config={
+    "temperature": 0.7,
+    "top_p": 1,
+    "max_output_tokens": 256  # Reduced from 512
+})
 
-        <!-- Recent Conversations -->
-        <div class="card p-4">
-            <h5 class="section-title">💬 Recent Conversations</h5>
-            <div id="conversation-list">
-                <div class="text-muted">Loading...</div>
-            </div>
-            <button class="btn btn-refresh mt-3" onclick="loadConversations()">🔄 Refresh</button>
-        </div>
+# Flask Blueprint
+dashboard_bp = Blueprint('dashboard', __name__)
 
-        <!-- Configuration Status -->
-        <div class="card p-4">
-            <h5 class="section-title">⚙️ Configuration Status</h5>
-            <div class="status-item">
-                <div class="status-dot"></div>
-                <div>
-                    <strong>Gemini Integration</strong><br>
-                    <small class="text-muted">Gemini-Pro model configured and active</small>
-                </div>
-            </div>
-            <div class="status-item">
-                <div class="status-dot"></div>
-                <div>
-                    <strong>Twilio WhatsApp</strong><br>
-                    <small class="text-muted">Webhook endpoint active</small>
-                </div>
-            </div>
-        </div>
-    </div>
+# Economic Expert Persona Prompt (Shortened)
+MALAYSIAN_ECONOMIC_EXPERT_PROMPT = """
+You are Dr. Siti Rahman — a leading Malaysian economist and policy advisor with 15+ years of experience.
 
-    <script>
-        async function loadStats() {
-            try {
-                // Replace with actual API endpoint
-                // const res = await fetch('/api/stats');
-                // const data = await res.json();
-                
-                // Mock data for demo
-                const data = {
-                    total_conversations: 142,
-                    total_messages: 1247,
-                    last_updated: new Date().toISOString()
-                };
-                
-                document.getElementById('total-conversations').textContent = data.total_conversations;
-                document.getElementById('total-messages').textContent = data.total_messages;
-                document.getElementById('last-updated').textContent = new Date(data.last_updated).toLocaleTimeString('en-MY', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
+## Professional Background:
+- Senior Economic Advisor at MIER
+- PhD in Development Economics from University of Cambridge
+- Former World Bank researcher (Southeast Asia)
 
-        async function loadConversations() {
-            const container = document.getElementById('conversation-list');
-            container.innerHTML = '<div class="text-muted">Loading...</div>';
+## Expertise:
+- Productivity Growth & Manufacturing Efficiency
+- Economic Policy & Structural Reforms
+- Malaysian Development Planning (ETP, GTP, NTP)
+- ASEAN Integration & Regional Economics
+
+## Response Style:
+- Authoritative yet accessible
+- Data-driven with Malaysian context
+- Solution-oriented business insights
+- Keep responses under 80 words
+
+Connect business advice to broader economic trends and Malaysian policy framework.
+"""
+
+# Memory-efficient conversation storage
+MAX_CONVERSATIONS = 50  # Limit total conversations
+MAX_MESSAGES_PER_CONVERSATION = 10  # Limit messages per chat
+conversation_history = {}
+conversation_timestamps = {}
+
+# Lazy loading variables (load only when needed)
+embeddings = None
+vectorstore = None
+_embeddings_loaded = False
+
+def cleanup_old_conversations():
+    """Remove old conversations to free memory"""
+    global conversation_history, conversation_timestamps
+    
+    current_time = datetime.now()
+    cutoff_time = current_time - timedelta(hours=24)  # Keep only last 24 hours
+    
+    # Remove old conversations
+    to_remove = []
+    for phone, timestamp in conversation_timestamps.items():
+        if timestamp < cutoff_time:
+            to_remove.append(phone)
+    
+    for phone in to_remove:
+        conversation_history.pop(phone, None)
+        conversation_timestamps.pop(phone, None)
+    
+    # Limit total conversations
+    if len(conversation_history) > MAX_CONVERSATIONS:
+        # Remove oldest conversations
+        sorted_conversations = sorted(conversation_timestamps.items(), key=lambda x: x[1])
+        oldest_to_remove = sorted_conversations[:len(conversation_history) - MAX_CONVERSATIONS]
+        
+        for phone, _ in oldest_to_remove:
+            conversation_history.pop(phone, None)
+            conversation_timestamps.pop(phone, None)
+
+def get_limited_context(phone_number):
+    """Get limited conversation context to save memory"""
+    if phone_number not in conversation_history:
+        conversation_history[phone_number] = deque(maxlen=MAX_MESSAGES_PER_CONVERSATION)
+        conversation_timestamps[phone_number] = datetime.now()
+    
+    # Return only last few messages for context
+    recent_messages = list(conversation_history[phone_number])[-3:]  # Last 3 messages only
+    return recent_messages
+
+def load_embeddings_if_needed():
+    """Lazy load embeddings only when actually needed"""
+    global embeddings, vectorstore, _embeddings_loaded
+    
+    if _embeddings_loaded:
+        return vectorstore is not None
+    
+    try:
+        # Use lighter embedding model
+        from sentence_transformers import SentenceTransformer
+        embeddings = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+        
+        if os.path.exists("faiss_index"):
+            from langchain_community.vectorstores import FAISS
+            from langchain_community.embeddings import HuggingFaceEmbeddings
             
-            try {
-                // Replace with actual API endpoint
-                // const res = await fetch('/api/conversations');
-                // const data = await res.json();
-                
-                // Mock data for demo
-                const data = [
-                    {
-                        phone: '+60123456789',
-                        message_count: 12,
-                        last_message: 'What are your thoughts on Malaysia\'s productivity growth in manufacturing?'
-                    },
-                    {
-                        phone: '+60198765432',
-                        message_count: 8,
-                        last_message: 'Could you explain the Economic Transformation Programme impact on SMEs?'
-                    },
-                    {
-                        phone: '+60147258369',
-                        message_count: 15,
-                        last_message: 'How does Malaysia compare with other ASEAN countries economically?'
-                    }
-                ];
-                
-                container.innerHTML = '';
-                
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="text-muted">No recent conversations found.</div>';
-                } else {
-                    data.forEach(conv => {
-                        const div = document.createElement('div');
-                        div.className = 'conversation-item';
-                        div.innerHTML = `
-                            <div class="conversation-phone">${conv.phone}</div>
-                            <div class="conversation-meta">${conv.message_count} messages</div>
-                            <div class="mt-1"><em>"${conv.last_message}"</em></div>
-                        `;
-                        container.appendChild(div);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-                container.innerHTML = '<div class="text-muted">Error loading conversations.</div>';
-            }
-        }
+            hf_embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2",
+                model_kwargs={'device': 'cpu'},
+                encode_kwargs={'normalize_embeddings': True}
+            )
+            vectorstore = FAISS.load_local("faiss_index", hf_embeddings, allow_dangerous_deserialization=True)
+            logging.info("✅ FAISS vectorstore loaded successfully")
+        else:
+            logging.warning("⚠️ FAISS index not found. Using basic responses.")
+            vectorstore = None
+            
+        _embeddings_loaded = True
+        return vectorstore is not None
+        
+    except Exception as e:
+        logging.error(f"❌ Error loading embeddings: {e}")
+        _embeddings_loaded = True
+        vectorstore = None
+        return False
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadStats();
-            loadConversations();
-        });
-    </script>
-</body>
-</html>
+def get_minimal_rag_context(user_message, max_docs=2):
+    """Get minimal RAG context to reduce memory usage"""
+    if not load_embeddings_if_needed() or not vectorstore:
+        return ""
+    
+    try:
+        # Get fewer, more relevant documents
+        related_docs = vectorstore.similarity_search(user_message, k=max_docs)
+        
+        # Keep only essential content
+        context_parts = []
+        for doc in related_docs:
+            content = doc.page_content.strip()
+            # Truncate long documents
+            if len(content) > 200:
+                content = content[:200] + "..."
+            context_parts.append(content)
+        
+        return "\n".join(context_parts)
+        
+    except Exception as e:
+        logging.error(f"Error in RAG retrieval: {e}")
+        return ""
+
+def get_ai_response(user_message, phone_number):
+    """Generate AI response with memory optimization"""
+    try:
+        # Cleanup old conversations periodically
+        if len(conversation_history) > 30:  # Trigger cleanup
+            cleanup_old_conversations()
+        
+        # Get limited context
+        recent_context = get_limited_context(phone_number)
+        
+        # Add user message
+        conversation_history[phone_number].append({"role": "user", "content": user_message})
+        conversation_timestamps[phone_number] = datetime.now()
+        
+        # Get minimal RAG context (only for economic queries)
+        doc_context = ""
+        economic_keywords = ['economic', 'economy', 'productivity', 'growth', 'policy', 'malaysia', 'business']
+        
+        if any(keyword in user_message.lower() for keyword in economic_keywords):
+            doc_context = get_minimal_rag_context(user_message, max_docs=1)  # Only 1 doc
+        
+        # Build minimal prompt
+        if doc_context:
+            prompt = f"""
+{MALAYSIAN_ECONOMIC_EXPERT_PROMPT}
+
+Context: {doc_context}
+
+Question: {user_message}
+
+Provide a focused economic analysis (max 80 words):
+"""
+        else:
+            prompt = f"""
+{MALAYSIAN_ECONOMIC_EXPERT_PROMPT}
+
+Question: {user_message}
+
+Provide expert economic advice (max 80 words):
+"""
+
+        # Get response from Gemini
+        response = model.generate_content(prompt)
+        ai_response = response.text.strip()
+        
+        # Ensure response isn't too long
+        if len(ai_response) > 500:
+            ai_response = ai_response[:500] + "..."
+
+        # Store AI response
+        conversation_history[phone_number].append({"role": "assistant", "content": ai_response})
+        
+        return ai_response
+
+    except Exception as e:
+        logging.error(f"Error generating AI response: {str(e)}")
+        return "Maaf, I'm experiencing technical difficulties. Please try again shortly."
+
+@dashboard_bp.route('/')
+def dashboard():
+    return render_template('dashboard.html')
+
+@dashboard_bp.route('/api/stats')
+def get_stats():
+    try:
+        # Cleanup before calculating stats
+        cleanup_old_conversations()
+        
+        total_conversations = len(conversation_history)
+        total_messages = sum(len(conv) for conv in conversation_history.values())
+        
+        return jsonify({
+            'status': 'active',
+            'total_conversations': total_conversations,
+            'total_messages': total_messages,
+            'last_updated': datetime.now().isoformat(),
+            'rag_enabled': vectorstore is not None,
+            'persona': 'Economic Expert',
+            'memory_optimized': True
+        })
+    except Exception as e:
+        logging.error(f"Error getting stats: {str(e)}")
+        return jsonify({'error': 'Failed to get statistics'}), 500
+
+@dashboard_bp.route('/api/conversations')
+def get_conversations():
+    try:
+        recent_conversations = []
+        for phone, history in conversation_history.items():
+            if history:
+                # Get last message safely
+                last_message = ""
+                if len(history) > 0:
+                    last_user_messages = [msg for msg in history if msg["role"] == "user"]
+                    if last_user_messages:
+                        last_message = last_user_messages[-1]["content"][:50] + "..." if len(last_user_messages[-1]["content"]) > 50 else last_user_messages[-1]["content"]
+                
+                masked_phone = phone[:3] + "*" * (len(phone) - 6) + phone[-3:] if len(phone) > 6 else phone[:2] + "***"
+                recent_conversations.append({
+                    'phone': masked_phone,
+                    'last_message': last_message,
+                    'message_count': len(history),
+                    'last_message_time': conversation_timestamps.get(phone, datetime.now()).isoformat()
+                })
+        
+        # Return only most recent 10 conversations
+        recent_conversations.sort(key=lambda x: x['last_message_time'], reverse=True)
+        return jsonify(recent_conversations[:10])
+        
+    except Exception as e:
+        logging.error(f"Error getting conversations: {str(e)}")
+        return jsonify({'error': 'Failed to get conversations'}), 500
+
+# Memory cleanup route (optional - for manual cleanup)
+@dashboard_bp.route('/api/cleanup')
+def manual_cleanup():
+    try:
+        cleanup_old_conversations()
+        return jsonify({'status': 'cleaned', 'remaining_conversations': len(conversation_history)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
