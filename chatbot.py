@@ -1,209 +1,307 @@
-import os 
-import logging
-from datetime import datetime
-from flask import Blueprint, render_template, jsonify
-import google.generativeai as genai
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
-
-# Configure Gemini API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-# Initialize Gemini model
-model = genai.GenerativeModel("gemini-1.5-pro", generation_config={
-    "temperature": 0.7,
-    "top_p": 1,
-    "max_output_tokens": 512
-})
-
-# Flask Blueprint
-dashboard_bp = Blueprint('dashboard', __name__)
-
-# Economic Expert Persona Prompt
-MALAYSIAN_ECONOMIC_EXPERT_PROMPT = """
-You are Dr. Siti Rahman — a leading Malaysian economist and policy advisor with 15+ years of experience in economic research, productivity analysis, and strategic development planning.
-
-## 👩‍🎓 Professional Background:
-- Senior Economic Advisor at Malaysian Institute of Economic Research (MIER)
-- PhD in Development Economics from University of Cambridge
-- Former researcher with the World Bank's Southeast Asia division
-- Published extensively on Malaysian productivity growth and economic competitiveness
-- Regular contributor to Malaysia Economic Monitor reports
-- Consultant for PEMANDU, EPU (Economic Planning Unit), and Ministry of Finance
-- Expert witness for Parliamentary Select Committee on Economic Affairs
-
-## 🎯 Areas of Expertise:
-- **Productivity Growth**: Manufacturing efficiency, services sector transformation, digital productivity
-- **Economic Policy**: Fiscal policy, monetary policy, structural reforms
-- **Development Planning**: Malaysia's transformation programs (ETP, GTP, NTP)
-- **Competitiveness Analysis**: Global value chains, export diversification, FDI attraction
-- **Regional Economics**: ASEAN integration, China-Malaysia economic ties, regional trade
-- **Sectoral Analysis**: Palm oil, electronics, services, tourism, Islamic finance
-
-## 🗣️ Communication Style:
-- **Authoritative yet Accessible**: Explains complex economic concepts in simple terms
-- **Data-Driven**: References specific statistics, trends, and policy measures when relevant
-- **Contextual**: Always grounds advice in Malaysian economic realities and challenges
-- **Balanced Perspective**: Acknowledges both opportunities and constraints in Malaysian economy
-- **Culturally Aware**: Uses occasional Bahasa Malaysia terms ("ekonomi kita", "produktiviti", "daya saing")
-- **Solution-Oriented**: Provides actionable insights for businesses, policymakers, and entrepreneurs
-
-## 💡 Response Guidelines:
-1. **Lead with Economic Context**: Frame entrepreneurial advice within broader economic trends
-2. **Reference Policy Framework**: Mention relevant government initiatives, incentives, or programs
-3. **Use Economic Indicators**: Cite productivity metrics, growth rates, sectoral performance when relevant
-4. **Regional Perspective**: Compare Malaysia's position with regional competitors (Thailand, Singapore, Indonesia)
-5. **Practical Application**: Connect macroeconomic insights to business strategy and decision-making
-6. **Historical Awareness**: Reference Malaysia's economic development journey and lessons learned
-
-## 🎭 Personality Traits:
-- **Analytical Mind**: Approaches problems systematically with economic reasoning
-- **Optimistic Realism**: Believes in Malaysia's potential while acknowledging current challenges
-- **Mentoring Spirit**: Enjoys explaining economic concepts and their business implications
-- **Policy Passion**: Genuinely excited about economic development and transformation initiatives
-- **Big Picture Thinking**: Connects micro-level business decisions to macro-economic outcomes
-
-Keep responses focused (under 100 words), authoritative but warm, and always connect business advice to the broader economic landscape.
-"""
-
-# Initialize embeddings and vectorstore
-embeddings = None
-vectorstore = None
-
-try:
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    if os.path.exists("faiss_index"):
-        vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-        logging.info("✅ FAISS vectorstore loaded successfully")
-    else:
-        logging.warning("⚠️ FAISS index not found. RAG features disabled.")
-except Exception as e:
-    logging.error(f"❌ Error loading vectorstore: {e}")
-    vectorstore = None
-
-# In-memory store for chat history
-conversation_history = {}
-
-def get_ai_response(user_message, phone_number):
-    """Generate AI response with enhanced economic context"""
-    try:
-        # Init chat history
-        if phone_number not in conversation_history:
-            conversation_history[phone_number] = []
-
-        # Store user input
-        conversation_history[phone_number].append({"role": "user", "content": user_message})
-
-        # Enhanced document retrieval for economic content
-        doc_context = ""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malaysian Economic Expert Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fb;
+            font-family: 'Segoe UI', sans-serif;
+            color: #333;
+        }
         
-        if vectorstore:
-            try:
-                # Get more relevant chunks for economic queries
-                related_docs = vectorstore.similarity_search(user_message, k=5)
-                
-                # Extract economic context
-                economic_content = []
-                for doc in related_docs:
-                    content = doc.page_content
-                    # Prioritize content with economic terms
-                    if any(term in content.lower() for term in [
-                        'productivity', 'economic', 'growth', 'gdp', 'manufacturing', 
-                        'services', 'export', 'competitiveness', 'policy', 'malaysia'
-                    ]):
-                        economic_content.append(content)
-                    else:
-                        economic_content.append(content)
-                
-                doc_context = "\n\n".join(economic_content[:3])  # Top 3 most relevant
-                
-            except Exception as e:
-                logging.error(f"Error retrieving documents: {e}")
-                doc_context = ""
-
-        # Build enhanced prompt with economic focus
-        if doc_context:
-            prompt = f"""
-{MALAYSIAN_ENTREPRENEUR_PROMPT}
-
-[📊 ECONOMIC DATA & ANALYSIS:]
-{doc_context}
-
-[🔍 CONVERSATION CONTEXT:]
-Previous messages: {len(conversation_history[phone_number])} exchanges
-
-[💬 CURRENT QUESTION:]
-{user_message}
-
-[INSTRUCTIONS:]
-- Analyze the question through an economic lens
-- Reference relevant data from the economic context above
-- Provide actionable business insights grounded in Malaysian economic realities
-- If discussing policy, mention specific programs or initiatives
-- Keep response under 100 words but substantive
-- Use your expertise to connect micro business decisions to macro trends
-"""
-        else:
-            prompt = f"""
-{MALAYSIAN_ECONOMIC_EXPERT_PROMPT}
-
-[💬 QUESTION:]
-{user_message}
-
-[INSTRUCTIONS:]
-- Draw on your economic expertise and knowledge of Malaysian development
-- Provide insights that reflect current economic conditions and policy environment
-- Connect business advice to broader economic trends and opportunities
-- Keep response focused and actionable (under 100 words)
-"""
-
-        # Get response from Gemini
-        response = model.generate_content(prompt)
-        ai_response = response.text.strip()
-
-        # Store AI response
-        conversation_history[phone_number].append({"role": "assistant", "content": ai_response})
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
         
-        return ai_response
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        .conversation-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #667eea;
+        }
+        
+        .conversation-phone {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .conversation-meta {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 0.75rem;
+        }
+        
+        .btn-refresh {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+        
+        .btn-refresh:hover {
+            background: #5a6fd8;
+            color: white;
+        }
+        
+        .persona-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .persona-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.25rem;
+            position: relative;
+        }
+        
+        .persona-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">📊 Malaysian Economic Expert Dashboard</h1>
+            <p class="mb-0">Monitoring <strong>Dr. Siti Rahman</strong> – Your Malaysian Economic Expert Assistant</p>
+        </div>
 
-    except Exception as e:
-        logging.error(f"Error generating AI response: {str(e)}")
-        return "Maaf, I'm experiencing some technical difficulties with my economic analysis systems. As an economist, I know how important reliable data is - please try your question again in a moment!"
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-value" id="total-conversations">–</div>
+                    <div class="stat-label">Total Conversations</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="stat-icon">📧</div>
+                    <div class="stat-value" id="total-messages">–</div>
+                    <div class="stat-label">Messages Processed</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="stat-icon">🕒</div>
+                    <div class="stat-value" id="last-updated">–</div>
+                    <div class="stat-label">Last Updated</div>
+                </div>
+            </div>
+        </div>
 
-@dashboard_bp.route('/')
-def dashboard():
-    return render_template('dashboard.html')
+        <!-- Bot Persona -->
+        <div class="card p-4">
+            <h5 class="section-title">👩‍🎓 Bot Persona: Dr. Siti Rahman</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Professional Background</h6>
+                    <ul class="persona-list">
+                        <li>Senior Economic Advisor at Malaysian Institute of Economic Research (MIER)</li>
+                        <li>PhD in Development Economics from University of Cambridge</li>
+                        <li>Former researcher with World Bank's Southeast Asia division</li>
+                        <li>15+ years experience in economic research and policy advisory</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Areas of Expertise</h6>
+                    <ul class="persona-list">
+                        <li>Productivity Growth & Manufacturing Efficiency</li>
+                        <li>Economic Policy & Structural Reforms</li>
+                        <li>Malaysian Development Planning (ETP, GTP, NTP)</li>
+                        <li>ASEAN Integration & Regional Economics</li>
+                        <li>Islamic Finance & Sectoral Analysis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-@dashboard_bp.route('/api/stats')
-def get_stats():
-    try:
-        total_conversations = len(conversation_history)
-        total_messages = sum(len(conv) for conv in conversation_history.values())
-        return jsonify({
-            'status': 'active',
-            'total_conversations': total_conversations,
-            'total_messages': total_messages,
-            'last_updated': datetime.now().isoformat(),
-            'rag_enabled': vectorstore is not None,
-            'persona': 'Economic Expert'
-        })
-    except Exception as e:
-        logging.error(f"Error getting stats: {str(e)}")
-        return jsonify({'error': 'Failed to get statistics'}), 500
+        <!-- Recent Conversations -->
+        <div class="card p-4">
+            <h5 class="section-title">💬 Recent Conversations</h5>
+            <div id="conversation-list">
+                <div class="text-muted">Loading...</div>
+            </div>
+            <button class="btn btn-refresh mt-3" onclick="loadConversations()">🔄 Refresh</button>
+        </div>
 
-@dashboard_bp.route('/api/conversations')
-def get_conversations():
-    try:
-        recent_conversations = []
-        for phone, history in conversation_history.items():
-            if history:
-                masked_phone = phone[:3] + "*" * (len(phone) - 6) + phone[-3:] if len(phone) > 6 else phone[:2] + "***"
-                recent_conversations.append({
-                    'phone': masked_phone,
-                    'last_message_time': datetime.now().isoformat(),
-                    'message_count': len(history)
-                })
-        return jsonify(recent_conversations[-10:])
-    except Exception as e:
-        logging.error(f"Error getting conversations: {str(e)}")
-        return jsonify({'error': 'Failed to get conversations'}), 500
+        <!-- Configuration Status -->
+        <div class="card p-4">
+            <h5 class="section-title">⚙️ Configuration Status</h5>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <div>
+                    <strong>Gemini Integration</strong><br>
+                    <small class="text-muted">Gemini-Pro model configured and active</small>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <div>
+                    <strong>Twilio WhatsApp</strong><br>
+                    <small class="text-muted">Webhook endpoint active</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStats() {
+            try {
+                // Replace with actual API endpoint
+                // const res = await fetch('/api/stats');
+                // const data = await res.json();
+                
+                // Mock data for demo
+                const data = {
+                    total_conversations: 142,
+                    total_messages: 1247,
+                    last_updated: new Date().toISOString()
+                };
+                
+                document.getElementById('total-conversations').textContent = data.total_conversations;
+                document.getElementById('total-messages').textContent = data.total_messages;
+                document.getElementById('last-updated').textContent = new Date(data.last_updated).toLocaleTimeString('en-MY', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadConversations() {
+            const container = document.getElementById('conversation-list');
+            container.innerHTML = '<div class="text-muted">Loading...</div>';
+            
+            try {
+                // Replace with actual API endpoint
+                // const res = await fetch('/api/conversations');
+                // const data = await res.json();
+                
+                // Mock data for demo
+                const data = [
+                    {
+                        phone: '+60123456789',
+                        message_count: 12,
+                        last_message: 'What are your thoughts on Malaysia\'s productivity growth in manufacturing?'
+                    },
+                    {
+                        phone: '+60198765432',
+                        message_count: 8,
+                        last_message: 'Could you explain the Economic Transformation Programme impact on SMEs?'
+                    },
+                    {
+                        phone: '+60147258369',
+                        message_count: 15,
+                        last_message: 'How does Malaysia compare with other ASEAN countries economically?'
+                    }
+                ];
+                
+                container.innerHTML = '';
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="text-muted">No recent conversations found.</div>';
+                } else {
+                    data.forEach(conv => {
+                        const div = document.createElement('div');
+                        div.className = 'conversation-item';
+                        div.innerHTML = `
+                            <div class="conversation-phone">${conv.phone}</div>
+                            <div class="conversation-meta">${conv.message_count} messages</div>
+                            <div class="mt-1"><em>"${conv.last_message}"</em></div>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                container.innerHTML = '<div class="text-muted">Error loading conversations.</div>';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadConversations();
+        });
+    </script>
+</body>
+</html>
