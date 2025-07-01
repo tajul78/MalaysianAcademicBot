@@ -1,4 +1,4 @@
-import os
+import os 
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify
@@ -145,7 +145,7 @@ Previous messages: {len(conversation_history[phone_number])} exchanges
 """
         else:
             prompt = f"""
-{MALAYSIAN_ENTREPRENEUR_PROMPT}
+{MALAYSIAN_ECONOMIC_EXPERT_PROMPT}
 
 [💬 QUESTION:]
 {user_message}
